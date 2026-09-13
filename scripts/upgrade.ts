@@ -58,6 +58,8 @@ keyProvider.useCache(true);
 const programManager = new ProgramManager(HOST, keyProvider);
 // Set the account for the program manager.
 programManager.setAccount(account);
+// Note: Typescript throws error ^ here, its works in runtime as type gets set at runtime.
+// So, no need to fix it.
 // const imports = await networkClient.getProgramImports(PROGRAM_SOURCE);
 // console.log("Program imports:", imports);
 

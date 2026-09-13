@@ -40,8 +40,8 @@ async function initializeStreamConfig() {
             admin,
             feeVault: admin,
             withdrawer: admin,
-            baseFee: "0.01", // 10_000 microcredits
-            platformFee: "0.1", // 100_000 microcredits
+            baseFee: "0", // 0 microcredits
+            platformFee: "0", // 0 microcredits
         },
         { priorityFee: 100_000 },
     );
@@ -59,8 +59,8 @@ async function updateStreamConfig() {
             admin,
             feeVault: admin,
             withdrawer: admin,
-            baseFee: "0.1", // 100_000 microcredits
-            platformFee: "1", // 1_000_000 microcredits
+            baseFee: "0", // 0 microcredits
+            platformFee: "0", // 0 microcredits
         },
         { priorityFee: 100_000 },
     );
@@ -88,7 +88,7 @@ async function whitelistTokens() {
 
 async function main() {
     await initializeStreamConfig();
-    await updateStreamConfig();
+    // await updateStreamConfig();
     await whitelistTokens();
 }
 

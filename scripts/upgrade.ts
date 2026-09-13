@@ -37,8 +37,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const PROGRAM_ID = JSON.parse(
     fs.readFileSync(path.resolve(here, "../program.json"), "utf8"),
 )["program"] as string;
+const PROGRAM_IDENTIFIER = PROGRAM_ID.split(".aleo")[0];
 const PROGRAM_SOURCE = fs.readFileSync(
-    path.resolve(here, `../build/${PROGRAM_ID}/${PROGRAM_ID}.aleo`),
+    path.resolve(here, `../build/${PROGRAM_IDENTIFIER}/${PROGRAM_ID}`),
     "utf8",
 );
 console.log("Program id:", PROGRAM_ID);

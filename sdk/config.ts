@@ -11,7 +11,7 @@ export const DEFAULT_ALEO_ENDPOINT = "https://api.explorer.provable.com/v1";
 export const CREDITS_PROGRAM_ID = "credits.aleo";
 
 /** Deployed Zebec stream program id per network. */
-export const ZEBEC_STREAM_PROGRAM_ID = "test_zebec_stream_v4.aleo";
+export const ZEBEC_STREAM_PROGRAM_ID = process.env.NETWORK === "testnet" ? "test_zebec_stream_v4.aleo" : "zebec_stream_v2.aleo";
 
 export interface StablecoinNetworkConfig {
   /**

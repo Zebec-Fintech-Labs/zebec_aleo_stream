@@ -216,7 +216,7 @@ const WITHDRAW_FREQUENCIES: [u64; WITHDRAW_FREQUENCIES_LEN] = [
 // timestamp, in seconds.
 const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
-program test_zebec_stream_v4.aleo {
+program zebec_stream_v2.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;
@@ -1424,7 +1424,8 @@ program test_zebec_stream_v4.aleo {
     // Only this address may deploy upgrades to this program (Leo
     // admin-upgrade mode); this constructor's own logic becomes immutable
     // once the program is first deployed.
-    @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038")
+    // @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038") // testnet
+    @admin(address="aleo1ta644kz3qqlwz5tg8pkee8qdwt4wlttuz4zjuhke2e3ph8x8ty9szywrvx") // mainnet
     constructor() {}
 }
 

@@ -26,6 +26,7 @@ import {
   STABLE_COINS_CONFIGS,
   ZEBEC_STREAM_PROGRAM_ID,
 } from "./config.js";
+import { getLoadedAleoSdk, resolvedNetwork } from "./network.js";
 import { streamCountKey, streamRefKey, whitelistKey } from "./hashing.js";
 import {
   computeAutoWithdrawalFee,
@@ -104,7 +105,17 @@ export class StreamService {
     const programId = options.programId ?? ZEBEC_STREAM_PROGRAM_ID;
     this.programId = programId;
     this.wallet = wallet;
-    this.networkClient = new AleoNetworkClient(this.host);
+    const network = options.network ?? resolvedNetwork();
+    const sdk = getLoadedAleoSdk();
+    if (sdk) {
+      this.networkClient = new sdk.AleoNetworkClient(this.host);
+    } else if (network === "mainnet") {
+      throw new Error(
+        'Mainnet Aleo SDK is not loaded. Call loadAleoSdk("mainnet") (or createAleoWallet) before constructing StreamClient.',
+      );
+    } else {
+      this.networkClient = new AleoNetworkClient(this.host);
+    }
   }
 
   /** Aleo address of the connected wallet. */

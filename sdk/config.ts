@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
  * compliant stablecoins (needed to build IARC22 exclusion proofs).
  */
 
+/** Target Aleo network. */
+export type Network = "mainnet" | "testnet";
+
 /** Default explorer API endpoint (testnet). */
 export const DEFAULT_ALEO_ENDPOINT = "https://api.explorer.provable.com/v1";
 

@@ -10,7 +10,9 @@ export {
   ZEBEC_STREAM_PROGRAM_ID,
   STABLE_COINS_CONFIGS,
 } from "./config.js";
-export type { StablecoinNetworkConfig } from "./config.js";
+export type { Network, StablecoinNetworkConfig } from "./config.js";
+
+export { loadAleoSdk, resolvedNetwork } from "./network.js";
 
 export { createAleoWallet } from "./wallet.js";
 export type { AleoWalletOptions } from "./wallet.js";

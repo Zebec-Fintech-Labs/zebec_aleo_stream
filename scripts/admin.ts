@@ -11,15 +11,15 @@ dotenv.config();
 
 await initThreadPool();
 
-const PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
+const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 
-if (!PRIVATE_KEY) {
-    console.error("PRIVATE_KEY environment variable is not set.");
+if (!ADMIN_PRIVATE_KEY) {
+    console.error("ADMIN_PRIVATE_KEY environment variable is not set.");
     process.exit(1);
 }
 const HOST = process.env.ENDPOINT ?? "https://api.explorer.provable.com/v1";
 
-const wallet = await createAleoWallet(PRIVATE_KEY, { host: HOST });
+const wallet = await createAleoWallet(ADMIN_PRIVATE_KEY, { host: HOST });
 const client = new StreamClient(wallet, { host: HOST });
 const admin = wallet.address;
 console.log("Admin address:", admin);

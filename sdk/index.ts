@@ -1,7 +1,3 @@
-/**
- * zebec-stream-sdk — TypeScript SDK for the `test_zebec_stream_v4.aleo` program.
- */
-
 export {
   StreamService as StreamClient,
   DEFAULT_ENDPOINT,

@@ -1,5 +1,5 @@
 /**
- * TypeScript mirrors of the Leo structs in `test_zebec_stream_v4.aleo` (see
+ * TypeScript mirrors of the Leo structs in Zebec Stream Program (see
  * `src/main.leo` at the repository root) plus SDK option types.
  *
  * Two layers of types:
@@ -437,7 +437,7 @@ export interface StreamServiceOptions {
   host?: string;
   /**
    * Program id. Defaults to the deployed program —
-   * `test_zebec_stream_v4.aleo` on testnet.
+   * (read from `program.json`).
    */
   programId?: string;
 }

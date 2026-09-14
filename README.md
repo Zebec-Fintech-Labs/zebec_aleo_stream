@@ -2,7 +2,7 @@
 
 A privacy-preserving token-streaming (vesting) protocol for the Aleo blockchain, plus the TypeScript SDK and CLI scripts used to build, deploy, and drive it.
 
-The on-chain program — `test_zebec_stream_v4.aleo`, written in [Leo](https://docs.leo-lang.org) — lets a **sender** stream any [ARC-22](https://vote.aleo.org/p/arc-0022) (`IARC22`) fungible token to a **receiver** on a linear vesting schedule, with pause/resume, cancellation, top-ups, and delegated auto-withdrawal. Every stream can run in **public** mode (state readable on-chain) or **private** mode (state encrypted in records, only existence/status public) — the same schedule math, the same entry points, chosen per stream at creation time.
+The on-chain program — `zebec_stream_v2.aleo`, written in [Leo](https://docs.leo-lang.org) — lets a **sender** stream any [ARC-22](https://vote.aleo.org/p/arc-0022) (`IARC22`) fungible token to a **receiver** on a linear vesting schedule, with pause/resume, cancellation, top-ups, and delegated auto-withdrawal. Every stream can run in **public** mode (state readable on-chain) or **private** mode (state encrypted in records, only existence/status public) — the same schedule math, the same entry points, chosen per stream at creation time.
 
 ## Table of contents
 
@@ -170,12 +170,12 @@ All variables below are read by `scripts/*.ts` and `sdk/wallet.ts`'s `createAleo
 yarn build      # leo clean && leo build
 ```
 
-Compiles `src/main.leo` per `program.json` into `build/test_zebec_stream_v4/` (ABI, compiled `.aleo`, interfaces).
+Compiles `src/main.leo` per `program.json` into `build/<program identifier>/` (ABI, compiled `.aleo`, interfaces).
 
 ### Deploy / upgrade
 
 ```bash
-yarn run:deploy    # scripts/deploy.ts — deploys build/test_zebec_stream_v4/test_zebec_stream_v4.aleo
+yarn run:deploy    # scripts/deploy.ts — deploys build/<program identifier>/<program id>
 yarn run:upgrade   # scripts/upgrade.ts — upgrades an already-deployed program (constructor has @admin(...))
 ```
 
@@ -260,7 +260,10 @@ See `scripts/stream.ts` and `tests/stream.test.ts` for complete, runnable exampl
 
 ## On-chain program API
 
-Program id: **`test_zebec_stream_v4.aleo`** (Leo `4.4.1`, depends only on `credits.aleo`).
+Program id: 
+
+- mainnet: **`zebec_stream_v2.aleo`**
+- testnet: **`test_zebec_stream_v4.aleo`**
 
 ### Mappings
 

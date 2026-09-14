@@ -32,10 +32,15 @@ const EXPLORER =
 console.log("Network:", NETWORK);
 console.log("Host:", HOST);
 const here = path.dirname(fileURLToPath(import.meta.url));
+const PROGRAM_ID = JSON.parse(
+    fs.readFileSync(path.resolve(here, "../program.json"), "utf8"),
+)["program"] as string;
+const PROGRAM_IDENTIFIER = PROGRAM_ID.split(".aleo")[0];
 const PROGRAM_SOURCE = fs.readFileSync(
-    path.resolve(here, "../build/zebec_stream_v1/zebec_stream_v1.aleo"),
+    path.resolve(here, `../build/${PROGRAM_IDENTIFIER}/${PROGRAM_ID}`),
     "utf8",
 );
+console.log("Program id:", PROGRAM_ID);
 // console.log("Program source loaded:\n", PROGRAM_SOURCE, "\n");
 
 const account = new Account({ privateKey: PRIVATE_KEY });
@@ -51,6 +56,8 @@ keyProvider.useCache(true);
 const programManager = new ProgramManager(HOST, keyProvider);
 // Set the account for the program manager.
 programManager.setAccount(account);
+// Note: Typescript throws error ^ here, its works in runtime as type gets set at runtime.
+// So, no need to fix it.
 // const imports = await networkClient.getProgramImports(PROGRAM_SOURCE);
 // console.log("Program imports:", imports);
 

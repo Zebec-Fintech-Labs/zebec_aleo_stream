@@ -1,5 +1,5 @@
 /**
- * Helpers for locating unspent records needed by `zebec_stream_v1.aleo`
+ * Helpers for locating unspent records needed by `test_zebec_stream_v4.aleo`
  * transitions: `credits.aleo` records for fees, IARC22 token records for
  * stream deposits, and stream ticket records for stream management.
  */

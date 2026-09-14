@@ -266,6 +266,7 @@ describe("testnet integration: stream lifecycle", function () {
       config: CONFIG_NAME,
       streamToken: TOKEN_PROGRAM,
       streamFeeAmount: streamFee,
+      streamAmount: amountMicro,
       expiry: nowSeconds() + 3600n,
       nonce: randomField(),
       ...overrides,
@@ -274,6 +275,7 @@ describe("testnet integration: stream lifecycle", function () {
       config: rawFee.config,
       streamToken: rawFee.streamToken,
       streamFeeAmount: fromMicroUnits(rawFee.streamFeeAmount, TOKEN_DECIMALS),
+      streamAmount: fromMicroUnits(rawFee.streamAmount, TOKEN_DECIMALS),
       expiry: rawFee.expiry,
       nonce: rawFee.nonce,
     };
@@ -712,6 +714,22 @@ describe("testnet integration: stream lifecycle", function () {
               priorityFee: PRIORITY_FEE,
             }),
           "a token fee bound to a different token program",
+        );
+      });
+
+      it("rejects a token fee for a different stream amount", async () => {
+        // The admin-signed `stream_amount` must equal `params.amount`; a
+        // smaller-stream fee must not be reusable for a larger stream.
+        const params = createParams();
+        const { tokenFee, signature } = signedFee(microAmount(params.amount), {
+          streamAmount: microAmount(params.amount) + 1n,
+        });
+        await expectRejected(
+          () =>
+            senderClient.createStreamPublic(params, TOKEN_PROGRAM, TOKEN_DECIMALS, configInput(), tokenFee, signature, {
+              priorityFee: PRIORITY_FEE,
+            }),
+          "a token fee for a different stream amount",
         );
       });
 

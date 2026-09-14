@@ -1,7 +1,7 @@
 # Fetching Streams On-Chain (Production Guide)
 
 How to discover and read **public** and **private** streams created by
-`zebec_stream_v1.aleo` from the browser, via the Shield wallet
+`test_zebec_stream_v4.aleo` from the browser, via the Shield wallet
 (`app/src/stream/WalletStreamService.ts`) and `AleoNetworkClient` mapping
 reads.
 
@@ -110,7 +110,7 @@ import {
 } from "../sdk/index.js";
 
 const client = new AleoNetworkClient(network);
-const PROGRAM = "zebec_stream_v1.aleo";
+const PROGRAM = "test_zebec_stream_v4.aleo";
 const key = `${streamId}field`; // plaintext literal form
 
 const anchor = parseStreamAnchor(

@@ -13,6 +13,7 @@ const tokenFee: RawStreamTokenFee = {
   config: 12345n,
   streamToken: "token",
   streamFeeAmount: 50_000n,
+  streamAmount: 100_000_000n,
   expiry: 1_893_456_000n,
   nonce: 5n,
 };
@@ -40,6 +41,17 @@ describe("signStreamTokenFee", () => {
     const account = new Account({ privateKey: TEST_PRIVATE_KEY });
     const signature = signStreamTokenFee(TEST_PRIVATE_KEY, tokenFee);
     const other = { ...tokenFee, streamFeeAmount: 99_999n };
+    assert.ok(
+      !verifyStreamTokenFeeSignature(account.address().to_string(), other, signature),
+    );
+  });
+
+  it("fails verification for a different stream amount", () => {
+    // The signed fee is bound to the stream's `params.amount`; reusing a
+    // smaller-stream fee for a larger stream must not verify.
+    const account = new Account({ privateKey: TEST_PRIVATE_KEY });
+    const signature = signStreamTokenFee(TEST_PRIVATE_KEY, tokenFee);
+    const other = { ...tokenFee, streamAmount: 100_000_001n };
     assert.ok(
       !verifyStreamTokenFeeSignature(account.address().to_string(), other, signature),
     );

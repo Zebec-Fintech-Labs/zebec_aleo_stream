@@ -271,13 +271,19 @@ before any sub-calls. This helper enforces:
 ### Signed fee struct: `StreamTokenFee`
 
 The admin signs a `StreamTokenFee { config, stream_token, stream_fee_amount:
-u128, expiry: i64, nonce: field }` struct. The on-chain program verifies the
-Schnorr signature against `BHP256::hash_to_field(token_fee)` inside each
-create entry's own `final {}` block (see §7's finalize checklist above —
-there is no shared helper). The SDK mirrors this via `streamTokenFeeToPlaintext`
-(member order must match the Leo struct declaration exactly) and
-`signStreamTokenFee` / `streamTokenFeeMessage`. **Do not add, remove, or
-reorder fields without updating the SDK and regenerating test vectors.**
+u128, stream_amount: u128, expiry: i64, nonce: field }` struct. `stream_amount`
+is the full stream amount (`params.amount`); both create finals assert
+`token_fee.stream_amount == params.amount` inside `assert_token_fee_binding`
+(the binding targets the full amount, not `deposit_amount`/buffer, so a
+top-up/buffer stream can't underpay its fee on a larger full amount). The
+on-chain program verifies the Schnorr signature against
+`BHP256::hash_to_field(token_fee)` inside each create entry's own `final {}`
+block (see §7's finalize checklist above — there is no shared helper). The SDK
+mirrors this via `streamTokenFeeToPlaintext` (member order must match the Leo
+struct declaration exactly) and `signStreamTokenFee` / `streamTokenFeeMessage`.
+**Do not add, remove, or reorder fields without updating the SDK and
+regenerating test vectors.** Changing the preimage invalidates all previously
+signed fees — coordinate admin re-signing on deploy.
 
 ### Fee collection (stream fee is token-denominated)
 

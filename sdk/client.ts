@@ -1,6 +1,6 @@
 /**
  * `StreamService` — high-level interface to the Zebec stream program
- * (`zebec_stream_v1.aleo`): stream lifecycle, admin configuration,
+ * (`test_zebec_stream_v4.aleo`): stream lifecycle, admin configuration,
  * mapping reads, and record discovery.
  *
  * The service is **wallet-only**: every transaction goes through
@@ -245,6 +245,7 @@ export class StreamService {
       config: tokenFee.config,
       streamToken: tokenFee.streamToken,
       streamFeeAmount: BigInt(toMicroUnits(tokenFee.streamFeeAmount, tokenDecimals)),
+      streamAmount: BigInt(toMicroUnits(tokenFee.streamAmount, tokenDecimals)),
       expiry: BigInt(tokenFee.expiry),
       nonce: tokenFee.nonce,
     };

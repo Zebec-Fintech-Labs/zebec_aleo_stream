@@ -1,5 +1,5 @@
 /**
- * TypeScript mirrors of the Leo structs in `zebec_stream_v1.aleo` (see
+ * TypeScript mirrors of the Leo structs in `test_zebec_stream_v4.aleo` (see
  * `src/main.leo` at the repository root) plus SDK option types.
  *
  * Two layers of types:
@@ -21,8 +21,6 @@
  *   strings without quotes (`"my_token_program"`).
  * - Aleo addresses are `aleo1...` strings.
  */
-
-import type { Network } from "./config.js";
 
 // ===========================================================================
 // Raw (on-chain) types — bigint micro-units, bigint seconds
@@ -108,6 +106,12 @@ export interface RawStreamTokenFee {
   streamToken: string;
   /** Admin-signed stream fee amount in stream-token units (Leo `u128`). */
   streamFeeAmount: bigint;
+  /**
+   * Full stream amount this fee is signed for (must equal the `amount` field
+   * of `CreateStreamParams`). Binds the admin's signature to one stream size
+   * so a signed fee cannot be reused for a larger stream.
+   */
+  streamAmount: bigint;
   /** Unix timestamp after which this signed fee expires. */
   expiry: bigint;
   /** Unique nonce (a `field`), used for replay protection. */
@@ -242,6 +246,8 @@ export interface StreamTokenFee {
   streamToken: string;
   /** Fee amount in whole stream-token units. */
   streamFeeAmount: string | number;
+  /** Full stream amount this fee is signed for (the `params.amount`), in whole stream-token units. */
+  streamAmount: string | number;
   /** Unix timestamp after which this signed fee expires. */
   expiry: string | number | bigint;
   /** Unique nonce (a `field`), used for replay protection. */
@@ -430,10 +436,8 @@ export interface StreamServiceOptions {
   /** API host. Defaults to the testnet explorer API. */
   host?: string;
   /**
-   * Program id. Defaults to the deployed program for `network`
-   * (`zebec_stream_v1.aleo` on testnet).
+   * Program id. Defaults to the deployed program —
+   * `test_zebec_stream_v4.aleo` on testnet.
    */
   programId?: string;
-  /** Network the service talks to. Defaults to `Network.TESTNET`. */
-  network?: Network;
 }

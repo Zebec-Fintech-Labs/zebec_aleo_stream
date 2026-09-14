@@ -202,7 +202,7 @@ describe("StreamClient — wallet execution", () => {
           baseFee: "0.01",
           platformFee: "0.1",
         },
-        { config: 7n, streamToken: "test_token", streamFeeAmount: "0.1", expiry: 0, nonce: 1n },
+        { config: 7n, streamToken: "test_token", streamFeeAmount: "0.1", streamAmount: "100", expiry: 0, nonce: 1n },
         "sign1mock",
       ),
       /cannot create a stream to yourself/,
@@ -351,7 +351,7 @@ describe("StreamClient — receiver validation", () => {
       baseFee: "0.01",
       platformFee: "0.1",
     };
-    const fee = { config: 7n, streamToken: "test_token", streamFeeAmount: "0.1", expiry: 0, nonce: 1n };
+    const fee = { config: 7n, streamToken: "test_token", streamFeeAmount: "0.1", streamAmount: "100", expiry: 0, nonce: 1n };
     await assert.rejects(
       client.createStreamPublic(params, "test_token", 6, config, fee, "sign1mock"),
       /invalid receiver address/,

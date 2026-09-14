@@ -112,13 +112,14 @@ export function configToPlaintext(c: RawConfig): string {
  *
  * Leo struct declaration order:
  *   config: field, stream_token: identifier,
- *   stream_fee_amount: u128, expiry: i64, nonce: field
+ *   stream_fee_amount: u128, stream_amount: u128, expiry: i64, nonce: field
  */
 export function streamTokenFeeToPlaintext(tf: RawStreamTokenFee): string {
   return validated(
     `{ config: ${fieldLiteral(tf.config)}, ` +
     `stream_token: ${identLiteral(tf.streamToken)}, ` +
     `stream_fee_amount: ${tf.streamFeeAmount}u128, ` +
+    `stream_amount: ${tf.streamAmount}u128, ` +
     `expiry: ${tf.expiry}i64, nonce: ${fieldLiteral(tf.nonce)} }`
   );
 }

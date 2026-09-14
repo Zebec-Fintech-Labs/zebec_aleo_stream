@@ -13,18 +13,22 @@ import {
 // Known vector produced on-chain with `leo run` (Leo 4.4.1, testnet) against
 // the StreamTokenFee struct:
 //   { config: 12345field, stream_token: 'token', stream_fee_amount: 50000u128,
-//     expiry: 1893456000i64, nonce: 5field }
+//     stream_amount: 100000000u128, expiry: 1893456000i64, nonce: 5field }
 // If this matches, the off-chain BHP256 hashing reproduces
 // `BHP256::hash_to_field` for StreamTokenFee exactly.
 //
 // To regenerate: hash the plaintext above with BHP256::hash_to_field on-chain
 // and record the resulting field.
+// NOTE (stream_amount): this vector was computed off-chain with the SDK's
+// wasm BHP256 after adding `stream_amount` (which changes the preimage); it
+// must be re-confirmed with `leo run` against the deployed program before
+// relying on it.
 //
 // Whitelist key vector is unchanged (WhitelistKey struct unchanged).
 const WHITELIST_KEY =
   "5949549857295180779432337181339499322185250953286779710073517871832327878616field";
 const STREAM_TOKEN_FEE_MESSAGE =
-  "1406243592912000924737549262953687874236215765749277301427381915962454187152field";
+  "444813473149911723635518902530683060313170442593457409697886521359017725433field";
 
 describe("hashing — StreamTokenFee (known on-chain vector)", () => {
   it("streamTokenFeeMessage reproduces the on-chain fee message", () => {
@@ -32,6 +36,7 @@ describe("hashing — StreamTokenFee (known on-chain vector)", () => {
       config: 12345n,
       streamToken: "token",
       streamFeeAmount: 50_000n,
+      streamAmount: 100_000_000n,
       expiry: 1_893_456_000n,
       nonce: 5n,
     });
@@ -43,6 +48,7 @@ describe("hashing — StreamTokenFee (known on-chain vector)", () => {
         config: 12345n,
         streamToken: "token",
         streamFeeAmount: 50_000n,
+        streamAmount: 100_000_000n,
         expiry: 1_893_456_000n,
         nonce: 5n,
       }),
@@ -52,6 +58,7 @@ describe("hashing — StreamTokenFee (known on-chain vector)", () => {
       config: 12345n,
       streamToken: "token",
       streamFeeAmount: 99_999n,
+      streamAmount: 100_000_000n,
       expiry: 1_893_456_000n,
       nonce: 5n,
     });
@@ -63,6 +70,7 @@ describe("hashing — StreamTokenFee (known on-chain vector)", () => {
       config: 12345n,
       streamToken: "token",
       streamFeeAmount: 50_000n,
+      streamAmount: 100_000_000n,
       expiry: 1_893_456_000n,
       nonce: 5n,
     });
@@ -70,6 +78,7 @@ describe("hashing — StreamTokenFee (known on-chain vector)", () => {
       config: 12345n,
       streamToken: "token",
       streamFeeAmount: 50_000n,
+      streamAmount: 100_000_000n,
       expiry: 1_893_456_000n,
       nonce: 6n,
     });
@@ -224,6 +233,7 @@ describe("streamTokenFeeMessage — binding", () => {
     config: 12345n,
     streamToken: "token",
     streamFeeAmount: 50_000n,
+    streamAmount: 100_000_000n,
     expiry: 1_893_456_000n,
     nonce: 5n,
   };
@@ -236,12 +246,13 @@ describe("streamTokenFeeMessage — binding", () => {
     assert.notEqual(message, streamTokenFeeMessage({ ...base, streamToken: "token2" }));
     assert.notEqual(message, streamTokenFeeMessage({ ...base, expiry: 1_893_456_001n }));
     assert.notEqual(message, streamTokenFeeMessage({ ...base, streamFeeAmount: 50_001n }));
+    assert.notEqual(message, streamTokenFeeMessage({ ...base, streamAmount: 100_000_001n }));
     assert.notEqual(message, streamTokenFeeMessage({ ...base, nonce: 6n }));
   });
 
   it("accepts a zero fee amount and a zero nonce", () => {
     assert.match(
-      streamTokenFeeMessage({ ...base, streamFeeAmount: 0n, nonce: 0n }),
+      streamTokenFeeMessage({ ...base, streamFeeAmount: 0n, streamAmount: 0n, nonce: 0n }),
       /^\d+field$/,
     );
   });

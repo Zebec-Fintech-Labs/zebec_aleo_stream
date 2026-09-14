@@ -99,13 +99,14 @@ describe("struct serializers", () => {
       config: 12345n,
       streamToken: "token",
       streamFeeAmount: 50_000n,
+      streamAmount: 100_000_000n,
       expiry: 1_893_456_000n,
       nonce: 5n,
     });
     assert.equal(
       fee,
       "{ config: 12345field, stream_token: 'token', stream_fee_amount: 50000u128, " +
-      "expiry: 1893456000i64, nonce: 5field }",
+      "stream_amount: 100000000u128, expiry: 1893456000i64, nonce: 5field }",
     );
     Plaintext.fromString(fee).free();
 
@@ -448,12 +449,13 @@ describe("struct serializers — edge cases", () => {
       config: 1n,
       streamToken: "t",
       streamFeeAmount: 0n,
+      streamAmount: 0n,
       expiry: 0n,
       nonce: 0n,
     });
     assert.deepEqual(
       [...parseStructMembers(text).keys()],
-      ["config", "stream_token", "stream_fee_amount", "expiry", "nonce"],
+      ["config", "stream_token", "stream_fee_amount", "stream_amount", "expiry", "nonce"],
     );
   });
 

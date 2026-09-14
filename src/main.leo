@@ -172,6 +172,10 @@ struct StreamTokenFee {
     // `IARC22::transfer_from_public` (public); see `create_stream_private`/
     // `create_stream_public`.
     stream_fee_amount: u128,
+    // Full stream amount this fee is signed for (must equal the `amount`
+    // field of `CreateStreamParams`). Binds the admin's signature to one
+    // stream size so a signed fee cannot be reused for a larger stream.
+    stream_amount: u128,
     // Expiry of this signed fee object.
     expiry: i64,
     // Unique nonce — consumed on-chain to prevent replay.
@@ -212,7 +216,7 @@ const WITHDRAW_FREQUENCIES: [u64; WITHDRAW_FREQUENCIES_LEN] = [
 // timestamp, in seconds.
 const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
-program zebec_stream_v1.aleo {
+program test_zebec_stream_v4.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;
@@ -415,8 +419,8 @@ program zebec_stream_v1.aleo {
             assert(!used);
             // Consume the nonce so this signed fee cannot be replayed.
             token_fee_nonces.set(token_fee.nonce, true);
-            assert_token_fee_binding(token_fee, config, token_program, now);
-            // Message the admin signed: token id || fee amount || expiry || nonce.
+            assert_token_fee_binding(token_fee, config, token_program, now, amount);
+            // Message the admin signed: token id || fee amount || stream amount || expiry || nonce.
             let fee_message: field = BHP256::hash_to_field(token_fee);
             // Verified on-chain with a Schnorr signature against the config admin's key.
             let fee_valid: bool = std::sig::verify_schnorr(fee_signature, config.admin, fee_message);
@@ -866,8 +870,8 @@ program zebec_stream_v1.aleo {
             assert(!used);
             // Consume the nonce so this signed fee cannot be replayed.
             token_fee_nonces.set(token_fee.nonce, true);
-            assert_token_fee_binding(token_fee, config, token_program, now);
-            // Message the admin signed: token id || fee amount || expiry || nonce.
+            assert_token_fee_binding(token_fee, config, token_program, now, params.amount);
+            // Message the admin signed: token id || fee amount || stream amount || expiry || nonce.
             let fee_message: field = BHP256::hash_to_field(token_fee);
             // Verified on-chain with a Schnorr signature against the config admin's key.
             let fee_valid: bool = std::sig::verify_schnorr(fee_signature, config.admin, fee_message);
@@ -1420,7 +1424,7 @@ program zebec_stream_v1.aleo {
     // Only this address may deploy upgrades to this program (Leo
     // admin-upgrade mode); this constructor's own logic becomes immutable
     // once the program is first deployed.
-    @admin(address="aleo1ta644kz3qqlwz5tg8pkee8qdwt4wlttuz4zjuhke2e3ph8x8ty9szywrvx")
+    @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038")
     constructor() {}
 }
 
@@ -1524,10 +1528,14 @@ fn assert_token_fee_binding(
     config: Config,
     token_program: identifier,
     now: i64,
+    stream_amount: u128,
 ) {
     assert(now < token_fee.expiry);
     assert(token_fee.stream_token == token_program);
     assert(token_fee.config == config.config_name);
+    // The admin-signed fee is bound to the exact stream amount being created;
+    // prevents reusing a smaller-stream fee for a larger `params.amount`.
+    assert(token_fee.stream_amount == stream_amount);
 }
 
 // Assert the caller-supplied `now` is within NOW_TOLERANCE (2 minutes) of

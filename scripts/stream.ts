@@ -1,6 +1,6 @@
 /**
  * Stream lifecycle script: create -> pause -> resume -> withdraw ->
- * cancel, against the `zebec_stream_v1.aleo` program on testnet.
+ * cancel, against the `test_zebec_stream_v4.aleo` program on testnet.
  *
  * Transactions are executed through `createAleoWallet` — a Node `AleoWallet`
  * that proves via the delegated proving service and scans records via the
@@ -138,12 +138,14 @@ function createSignedTokenFee(streamAmountMicro: bigint): {
         config: CONFIG_NAME,
         streamToken: TOKEN_PROGRAM,
         streamFeeAmount: streamFee,
+        streamAmount: streamAmountMicro,
         expiry: nowSeconds() + 3600n,
         nonce: randomField(),
     };
     const tokenFee: StreamTokenFee = {
         ...rawFee,
         streamFeeAmount: fromMicroUnits(streamFee, TOKEN_DECIMALS),
+        streamAmount: fromMicroUnits(streamAmountMicro, TOKEN_DECIMALS),
     };
     return { tokenFee, signature: signStreamTokenFee(ADMIN_PRIVATE_KEY!, rawFee) };
 }

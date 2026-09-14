@@ -16,7 +16,7 @@ import type { RawStreamTokenFee } from "./types.js";
  * Sign a `StreamTokenFee` with the config admin's private key. Returns the
  * signature literal (`sign1...`) to pass as the `fee_signature` input of
  * `create_stream_private` or `create_stream_public`. The fee object is in
- * raw on-chain form (`streamFeeAmount` in token micro-units).
+ * raw on-chain form (`streamFeeAmount`/`streamAmount` in token micro-units).
  */
 export function signStreamTokenFee(
   privateKey: string | PrivateKey,

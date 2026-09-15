@@ -216,7 +216,7 @@ const WITHDRAW_FREQUENCIES: [u64; WITHDRAW_FREQUENCIES_LEN] = [
 // timestamp, in seconds.
 const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
-program zebec_stream_v2.aleo {
+program zebec_stream_v3.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;

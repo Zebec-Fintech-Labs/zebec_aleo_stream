@@ -1,6 +1,6 @@
 /**
  * Stream lifecycle script: create -> pause -> resume -> withdraw ->
- * cancel, against the `test_zebec_stream_v4.aleo` program on testnet.
+ * cancel, against the deployed program on testnet.
  *
  * Transactions are executed through `createAleoWallet` — a Node `AleoWallet`
  * that proves via the delegated proving service and scans records via the

@@ -15,22 +15,16 @@
  * for both the scanner and the proving service.
  */
 
-import {
-  Account,
-  AleoKeyProvider,
-  AleoNetworkClient,
-  NetworkRecordProvider,
-  ProgramManager,
-  RecordScanner,
-} from "@provablehq/sdk/testnet.js";
-
-import { DEFAULT_ALEO_ENDPOINT } from "./config.js";
+import { DEFAULT_ALEO_ENDPOINT, type Network } from "./config.js";
+import { loadAleoSdk, type AleoSdk } from "./network.js";
 import type { AleoWallet } from "./types.js";
 
 /** Options for {@link createAleoWallet}. Every value falls back to env vars. */
 export interface AleoWalletOptions {
   /** API host. Env: `ENDPOINT`. */
   host?: string;
+  /** `mainnet` or `testnet`. Env: `NETWORK`. */
+  network?: Network;
   /** Delegated proving service URI. Env: `PROVER_URI`. */
   proverUri?: string;
   /** Record scanner service URI. Env: `RECORD_SCANNER_URI`. */
@@ -78,22 +72,23 @@ function isPubkeyAuthError(error: unknown): boolean {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function getProgramManager(
+  sdk: AleoSdk,
   host: string,
-  account: Account,
-  networkClient: AleoNetworkClient,
-): ProgramManager {
-  const keyProvider = new AleoKeyProvider();
-  const recordProvider = new NetworkRecordProvider(
+  account: InstanceType<AleoSdk["Account"]>,
+  networkClient: InstanceType<AleoSdk["AleoNetworkClient"]>,
+): InstanceType<AleoSdk["ProgramManager"]> {
+  const keyProvider = new sdk.AleoKeyProvider();
+  const recordProvider = new sdk.NetworkRecordProvider(
     account,
     networkClient,
   );
-  const pm = new ProgramManager(host, keyProvider, recordProvider);
+  const pm = new sdk.ProgramManager(host, keyProvider, recordProvider);
   pm.setAccount(account);
   return pm;
 }
 
 async function loadProgramSource(
-  networkClient: AleoNetworkClient,
+  networkClient: InstanceType<AleoSdk["AleoNetworkClient"]>,
   programId: string,
 ): Promise<string> {
   const cached = programSourceCache.get(programId);
@@ -128,6 +123,12 @@ export async function createAleoWallet(
   privateKey: string | { to_string(): string },
   options: AleoWalletOptions = {},
 ): Promise<AleoWallet> {
+  const sdk = await loadAleoSdk(options.network);
+  const {
+    Account,
+    AleoNetworkClient,
+    RecordScanner,
+  } = sdk;
 
   const host = options.host ?? process.env.ENDPOINT ?? DEFAULT_ALEO_ENDPOINT;
   const proverUri = options.proverUri ?? process.env.PROVER_URI ?? "https://api.provable.com/prove";
@@ -181,7 +182,7 @@ export async function createAleoWallet(
     },
 
     executeTransaction: async (txOptions) => {
-      const programManager = getProgramManager(host, account, networkClient);
+      const programManager = getProgramManager(sdk, host, account, networkClient);
 
       const imports = new Set(txOptions.imports ?? []);
       imports.add(txOptions.program);
@@ -243,7 +244,7 @@ export async function createAleoWallet(
             // DPS 401 on /pubkey is often a sticky JWT/session. Drop the
             // cached token and use a fresh client.
             delete provingClient.jwtData;
-            provingClient = new AleoNetworkClient(host)
+            provingClient = new AleoNetworkClient(host);
             provingClient.setProverUri(proverUri);
             provingClient.setRecordScannerUri(recordScannerUri);
           }

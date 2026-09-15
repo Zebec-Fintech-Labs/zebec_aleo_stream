@@ -1,8 +1,15 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 /**
  * Network-level constants for the Zebec stream SDK: program ids per network,
  * default API endpoints, and the Sealance freeze-list APIs of the supported
  * compliant stablecoins (needed to build IARC22 exclusion proofs).
  */
+
+/** Target Aleo network. */
+export type Network = "mainnet" | "testnet";
 
 /** Default explorer API endpoint (testnet). */
 export const DEFAULT_ALEO_ENDPOINT = "https://api.explorer.provable.com/v1";
@@ -10,8 +17,12 @@ export const DEFAULT_ALEO_ENDPOINT = "https://api.explorer.provable.com/v1";
 /** `credits.aleo` — the native token program. */
 export const CREDITS_PROGRAM_ID = "credits.aleo";
 
-/** Deployed Zebec stream program id per network. */
-export const ZEBEC_STREAM_PROGRAM_ID = "test_zebec_stream_v4.aleo";
+const CONFIG_DIR = path.dirname(fileURLToPath(import.meta.url));
+
+/** Zebec stream program id — read from `../program.json` so renames stay in sync. */
+export const ZEBEC_STREAM_PROGRAM_ID = JSON.parse(
+  readFileSync(path.resolve(CONFIG_DIR, "../program.json"), "utf8"),
+)["program"] as string;
 
 export interface StablecoinNetworkConfig {
   /**

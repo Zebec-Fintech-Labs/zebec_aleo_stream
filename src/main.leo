@@ -216,7 +216,7 @@ const WITHDRAW_FREQUENCIES: [u64; WITHDRAW_FREQUENCIES_LEN] = [
 // timestamp, in seconds.
 const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
-program test_zebec_stream_v4.aleo {
+program zebec_stream_v2.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;
@@ -512,13 +512,15 @@ program test_zebec_stream_v4.aleo {
         assert(!stream_anchor.is_public);
         
         let effective_time: i64 = stream_anchor.paused ? stream_anchor.last_paused_time : now;
-        // Check: stream has started.
-        assert(stream_anchor.start_time <= effective_time);
-        // Check: stream has not yet ended.
+        let stream_started: bool = stream_anchor.start_time <= effective_time;
         let prev_paused_interval: u64 = stream_anchor.paused_interval;
-        let elapsed_duration: u64 = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
-        assert(elapsed_duration < stream_anchor.duration);
-        
+        let elapsed_duration: u64 = 0u64;
+        if stream_started {
+            // Check: stream has not yet ended.
+            elapsed_duration = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
+            assert(elapsed_duration < stream_anchor.duration);
+        }
+
         let (total_withdrawable_amount, currently_withdrawable_amount) = compute_withdrawable_amount(
             effective_time,
             stream_anchor.start_time,
@@ -994,13 +996,15 @@ program test_zebec_stream_v4.aleo {
         assert(stream_anchor.is_public);
         
         let effective_time: i64 = stream_anchor.paused ? stream_anchor.last_paused_time : now;
-        // Check: stream has started.
-        assert(stream_anchor.start_time <= effective_time);
-        // Check: stream has not ended.
+        let stream_started: bool = stream_anchor.start_time <= effective_time;
         let prev_paused_interval: u64 = stream_anchor.paused_interval;
-        let elapsed_duration: u64 = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
-        assert(elapsed_duration < stream_anchor.duration);
-        
+        let elapsed_duration: u64 = 0u64;
+        if stream_started {
+            // Check: stream has not ended.
+            elapsed_duration = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
+            assert(elapsed_duration < stream_anchor.duration);
+        }
+
         let (total_withdrawable_amount, currently_withdrawable_amount) = compute_withdrawable_amount(
             effective_time,
             stream_anchor.start_time,
@@ -1424,7 +1428,8 @@ program test_zebec_stream_v4.aleo {
     // Only this address may deploy upgrades to this program (Leo
     // admin-upgrade mode); this constructor's own logic becomes immutable
     // once the program is first deployed.
-    @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038")
+    // @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038") // testnet
+    @admin(address="aleo1ta644kz3qqlwz5tg8pkee8qdwt4wlttuz4zjuhke2e3ph8x8ty9szywrvx") // mainnet
     constructor() {}
 }
 

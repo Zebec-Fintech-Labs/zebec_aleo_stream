@@ -1,6 +1,6 @@
 /**
  * BHP256 hashing helpers reproducing the on-chain `BHP256::hash_to_field`
- * calls in `test_zebec_stream_v4.aleo` (mapping keys and the signed fee message).
+ * calls in the Zebec Stream Program (mapping keys and the signed fee message).
  *
  * Verified against `leo run`: hashing a struct's plaintext bits with the
  * default wasm `BHP256` hasher produces the identical field (see

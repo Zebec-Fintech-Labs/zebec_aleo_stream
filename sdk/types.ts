@@ -22,6 +22,8 @@
  * - Aleo addresses are `aleo1...` strings.
  */
 
+import type { Network } from "./config.js";
+
 // ===========================================================================
 // Raw (on-chain) types — bigint micro-units, bigint seconds
 // ===========================================================================
@@ -440,4 +442,6 @@ export interface StreamServiceOptions {
    * (read from `program.json`).
    */
   programId?: string;
+  /** Network the service talks to. Defaults to `NETWORK` env / testnet. */
+  network?: Network;
 }

@@ -16,7 +16,7 @@ await sdk.initThreadPool();
 
 const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 
-if (!PRIVATE_KEY) {
+if (!ADMIN_PRIVATE_KEY) {
     console.error("ADMIN_PRIVATE_KEY environment variable is not set.");
     process.exit(1);
 }
@@ -34,8 +34,8 @@ const WHITELIST_TOKENS = process.env.WHITELIST_TOKENS
         ? ["usdcx_stablecoin", "usad_stablecoin"]
         : ["test_usdcx_stablecoin", "test_usad_stablecoin"];
 
-const wallet = await createAleoWallet(PRIVATE_KEY, { host: HOST, network: NETWORK });
-const client = new StreamClient(wallet, { host: HOST, network: NETWORK });
+const wallet = await createAleoWallet(ADMIN_PRIVATE_KEY, { host: HOST, network: NETWORK });
+const client = new StreamClient(wallet, { host: HOST });
 const admin = wallet.address;
 console.log("Admin address:", admin);
 const CONFIG_NAME = configNameToField(`Stream_Config_001`);

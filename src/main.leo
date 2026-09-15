@@ -512,13 +512,15 @@ program zebec_stream_v2.aleo {
         assert(!stream_anchor.is_public);
         
         let effective_time: i64 = stream_anchor.paused ? stream_anchor.last_paused_time : now;
-        // Check: stream has started.
-        assert(stream_anchor.start_time <= effective_time);
-        // Check: stream has not yet ended.
+        let stream_started: bool = stream_anchor.start_time <= effective_time;
         let prev_paused_interval: u64 = stream_anchor.paused_interval;
-        let elapsed_duration: u64 = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
-        assert(elapsed_duration < stream_anchor.duration);
-        
+        let elapsed_duration: u64 = 0u64;
+        if stream_started {
+            // Check: stream has not yet ended.
+            elapsed_duration = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
+            assert(elapsed_duration < stream_anchor.duration);
+        }
+
         let (total_withdrawable_amount, currently_withdrawable_amount) = compute_withdrawable_amount(
             effective_time,
             stream_anchor.start_time,
@@ -994,13 +996,15 @@ program zebec_stream_v2.aleo {
         assert(stream_anchor.is_public);
         
         let effective_time: i64 = stream_anchor.paused ? stream_anchor.last_paused_time : now;
-        // Check: stream has started.
-        assert(stream_anchor.start_time <= effective_time);
-        // Check: stream has not ended.
+        let stream_started: bool = stream_anchor.start_time <= effective_time;
         let prev_paused_interval: u64 = stream_anchor.paused_interval;
-        let elapsed_duration: u64 = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
-        assert(elapsed_duration < stream_anchor.duration);
-        
+        let elapsed_duration: u64 = 0u64;
+        if stream_started {
+            // Check: stream has not ended.
+            elapsed_duration = (effective_time as u64 - stream_anchor.start_time as u64) - prev_paused_interval;
+            assert(elapsed_duration < stream_anchor.duration);
+        }
+
         let (total_withdrawable_amount, currently_withdrawable_amount) = compute_withdrawable_amount(
             effective_time,
             stream_anchor.start_time,

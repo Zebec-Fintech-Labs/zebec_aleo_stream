@@ -78,6 +78,14 @@ struct WhitelistKey {
     token_program: identifier,
 }
 
+// Composite key for the token-fee nonce replay-guard mapping. Scoping by
+// config prevents cross-config nonce front-running: an attacker who observes
+// nonce N on config A cannot consume it on config B to DoS the victim.
+struct NonceKey {
+    config: field,
+    nonce: field,
+}
+
 // One slot of a per-address stream registry. Hashed with BHP256 to form the
 // `outgoing_stream_refs` / `incoming_stream_refs` mapping keys so streams can
 // be listed per sender/receiver per config (public streams only).
@@ -139,6 +147,10 @@ struct StreamAnchor {
     withdrawn_amount: u128,
     is_public: bool,
     created_timestamp: i64,
+    // Config name this stream was created under. Used for tenant binding
+    // in private-path lifecycle functions that cannot look up the `Stream`
+    // mapping (which only exists for public streams).
+    config: field,
 }
 
 struct CreateStreamParams {
@@ -215,6 +227,12 @@ const WITHDRAW_FREQUENCIES: [u64; WITHDRAW_FREQUENCIES_LEN] = [
 // Allowed discrepancy between a caller-provided `now` input and the block
 // timestamp, in seconds.
 const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
+
+// Tighter tolerance used exclusively for cancel operations. Cancel is terminal
+// and the sender benefits from a stale `now` (lower vested amount means a
+// larger refund). Limiting to 10 s caps the maximum skim to
+// (full_amount / duration) * 10 — negligible for all practical stream sizes.
+const CANCEL_NOW_TOLERANCE: i64 = 10i64; // 10 seconds
 
 program zebec_stream_v3.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
@@ -414,11 +432,15 @@ program zebec_stream_v3.aleo {
             assert_config_fields(chain_config, config);
 
             // Checks: backend-signed token fee.
-            // Verify nonce is unused (prevents replay attacks).
-            let used = token_fee_nonces.get_or_use(token_fee.nonce, false);
+            // Nonce is scoped to this config to prevent cross-config front-running:
+            // an attacker observing nonce N on config A cannot consume it on config B.
+            let scoped_nonce_key: field = BHP256::hash_to_field(
+                NonceKey { config: config.config_name, nonce: token_fee.nonce }
+            );
+            let used = token_fee_nonces.get_or_use(scoped_nonce_key, false);
             assert(!used);
             // Consume the nonce so this signed fee cannot be replayed.
-            token_fee_nonces.set(token_fee.nonce, true);
+            token_fee_nonces.set(scoped_nonce_key, true);
             assert_token_fee_binding(token_fee, config, token_program, now, amount);
             // Message the admin signed: token id || fee amount || stream amount || expiry || nonce.
             let fee_message: field = BHP256::hash_to_field(token_fee);
@@ -450,6 +472,7 @@ program zebec_stream_v3.aleo {
                 withdrawn_amount: 0u128,
                 is_public: false,
                 created_timestamp: now,
+                config: config.config_name,
             };
 
             stream_anchors.set(stream_id, stream_anchor);
@@ -531,11 +554,15 @@ program zebec_stream_v3.aleo {
         );
 
         assert(total_withdrawable_amount <= ticket_record.full_amount);
-        // Cancel settles the whole stream so full funding is required: on an
-        // underfunded buffer stream the sender must top up before cancelling.
-        assert(total_withdrawable_amount <= stream_anchor.deposited_amount);
+        // Cancel is allowed as long as the receiver's currently-owed portion fits
+        // within the vault's available balance (deposited minus already-withdrawn).
+        // This unblocks buffer/top-up streams where `deposited < total_vested` but
+        // `deposited - withdrawn >= currently_withdrawable` — the sender no longer
+        // needs to top up before cancelling.
+        let available_balance_private: u128 = stream_anchor.deposited_amount - stream_anchor.withdrawn_amount;
+        assert(currently_withdrawable_amount <= available_balance_private);
 
-        let sender_amount: u128 = stream_anchor.deposited_amount - total_withdrawable_amount;
+        let sender_amount: u128 = available_balance_private - currently_withdrawable_amount;
 
         let (comp_a, token_a, f_sender_amount_transfer)
             = IARC22@(ticket_record.token_program)::transfer_public_to_private(
@@ -554,10 +581,10 @@ program zebec_stream_v3.aleo {
 
         return (sender_ticket, comp_a, token_a, comp_b, token_b, final {
             let real_now = std::ctx::block_timestamp();
-            // Check: caller-supplied `now` is within 2 minutes (NOW_TOLERANCE) of block time.
-            assert_within_tolerance(real_now, now);
-            // Reject a caller-supplied `now` in the future: accrual must not be
-            // inflated by up to NOW_TOLERANCE.
+            // Cancel uses a tighter tolerance (CANCEL_NOW_TOLERANCE = 10 s) so the
+            // sender cannot choose a stale `now` to minimize the receiver's payout.
+            assert(now > 0i64);
+            assert((real_now - now).abs() <= CANCEL_NOW_TOLERANCE);
             assert(now <= real_now);
             // Check: stream exists.
             assert(stream_anchors.contains(stream_id));
@@ -802,7 +829,12 @@ program zebec_stream_v3.aleo {
             let onchain_stream_anchor = stream_anchors.get(stream_id);
             // Check: on-chain anchor matches the caller-supplied snapshot.
             assert_stream_anchor_eq(stream_anchor, onchain_stream_anchor);
-        
+            // Check: stream belongs to this config (tenant binding for private streams).
+            // Public streams have a separate `Stream` mapping with a `config` field;
+            // private streams only have `StreamAnchor`, so this assertion is the sole
+            // on-chain proof that this stream was created under the caller-supplied config.
+            assert(onchain_stream_anchor.config == config.config_name);
+
             let withdrawn_amount: u128 = onchain_stream_anchor.withdrawn_amount + capped_withdrawable_amount;
             let updated_stream_anchor = StreamAnchor {
                 ..onchain_stream_anchor
@@ -845,9 +877,13 @@ program zebec_stream_v3.aleo {
             ? compute_auto_withdrawal_fee(params.duration, safe_frequency, config.base_fee, config.platform_fee)
             : 0u64;
 
-        // ALEO fees are paid from the caller's public credits balance.
+        // ALEO auto-withdrawal fee is paid from the caller's (employer's) public
+        // credits balance via `transfer_public`, which debits `self.caller` inside
+        // credits.aleo (= this program). In non-relayed flows the employer funds
+        // the program's credit balance; in relayed/sponsored flows the program's
+        // balance absorbs the fee rather than unexpectedly charging the tx signer.
         let f_auto_withdrawal_fee_transfer: Final =
-            credits.aleo::transfer_public_as_signer(config.withdrawer, auto_withdrawal_fee);
+            credits.aleo::transfer_public(config.withdrawer, auto_withdrawal_fee);
 
         let f_stream_fee_transfer: Final =
             IARC22@(token_program)::transfer_from_public(caller, config.fee_vault, token_fee.stream_fee_amount);
@@ -867,11 +903,15 @@ program zebec_stream_v3.aleo {
             assert_config_fields(chain_config, config);
 
             // Checks: backend-signed token fee.
-            // Verify nonce is unused (prevents replay attacks).
-            let used = token_fee_nonces.get_or_use(token_fee.nonce, false);
+            // Nonce is scoped to this config to prevent cross-config front-running:
+            // an attacker observing nonce N on config A cannot consume it on config B.
+            let scoped_nonce_key: field = BHP256::hash_to_field(
+                NonceKey { config: config.config_name, nonce: token_fee.nonce }
+            );
+            let used = token_fee_nonces.get_or_use(scoped_nonce_key, false);
             assert(!used);
             // Consume the nonce so this signed fee cannot be replayed.
-            token_fee_nonces.set(token_fee.nonce, true);
+            token_fee_nonces.set(scoped_nonce_key, true);
             assert_token_fee_binding(token_fee, config, token_program, now, params.amount);
             // Message the admin signed: token id || fee amount || stream amount || expiry || nonce.
             let fee_message: field = BHP256::hash_to_field(token_fee);
@@ -905,6 +945,7 @@ program zebec_stream_v3.aleo {
                 withdrawn_amount: 0u128,
                 is_public: true,
                 created_timestamp: now,
+                config: config.config_name,
             };
 
             stream_anchors.set(params.stream_id, stream_anchor);
@@ -1015,10 +1056,14 @@ program zebec_stream_v3.aleo {
         );
 
         assert(total_withdrawable_amount <= stream.full_amount);
-        // Cancel settles the whole stream so full funding is required.
-        assert(total_withdrawable_amount <= stream_anchor.deposited_amount);
+        // Cancel is allowed as long as the receiver's currently-owed portion fits
+        // within the vault's available balance (deposited minus already-withdrawn).
+        // This unblocks buffer/top-up streams where `deposited < total_vested` but
+        // `deposited - withdrawn >= currently_withdrawable`.
+        let available_balance_public: u128 = stream_anchor.deposited_amount - stream_anchor.withdrawn_amount;
+        assert(currently_withdrawable_amount <= available_balance_public);
 
-        let sender_amount: u128 = stream_anchor.deposited_amount - total_withdrawable_amount;
+        let sender_amount: u128 = available_balance_public - currently_withdrawable_amount;
 
         let stream_token_program = stream.token_program;
         let f_sender_amount_transfer: Final
@@ -1033,8 +1078,10 @@ program zebec_stream_v3.aleo {
         
         return final {
             let real_now = std::ctx::block_timestamp();
-            // Check: caller-supplied `now` is within 2 minutes (NOW_TOLERANCE) of block time.
-            assert_within_tolerance(real_now, now);
+            // Cancel uses a tighter tolerance (CANCEL_NOW_TOLERANCE = 10 s) so the
+            // sender cannot choose a stale `now` to minimize the receiver's payout.
+            assert(now > 0i64);
+            assert((real_now - now).abs() <= CANCEL_NOW_TOLERANCE);
             assert(now <= real_now);
             assert(stream_anchor.stream_id == stream.stream_id);
             // Check: stream exists and matches.
@@ -1495,6 +1542,7 @@ fn assert_stream_anchor_eq(provided: StreamAnchor, onchain: StreamAnchor) {
     assert(onchain.withdrawn_amount == provided.withdrawn_amount);
     assert(onchain.is_public == provided.is_public);
     assert(onchain.created_timestamp == provided.created_timestamp);
+    assert(onchain.config == provided.config);
 }
 
 // Assert every field of `provided` stream matches `onchain`.
@@ -1545,7 +1593,10 @@ fn assert_token_fee_binding(
 
 // Assert the caller-supplied `now` is within NOW_TOLERANCE (2 minutes) of
 // the on-chain block timestamp.
+// `assert(now > 0i64)` prevents a malformed `now = i64::MIN` from causing an
+// i64 checked-arithmetic overflow in the subtraction `real_now - now`.
 fn assert_within_tolerance(real_now: i64, now: i64) {
+    assert(now > 0i64);
     assert((real_now - now).abs() <= NOW_TOLERANCE);
 }
 

@@ -147,8 +147,10 @@ All variables below are read by `scripts/*.ts` and `sdk/wallet.ts`'s `createAleo
 
 | Variable | Required for | Purpose |
 | --- | --- | --- |
-| `NETWORK` | — | Target network label (`testnet`); informational in the current scripts. |
+| `NETWORK` | all | Target network: `mainnet` or `testnet`. Selects the SDK bundle and the deployed program id for deploy/upgrade. |
 | `PRIVATE_KEY` | `run:deploy`, `run:upgrade` | Deployer key that pays for deployment/upgrade transactions. |
+| `PROGRAM_ID` | `run:deploy`, `run:upgrade` | Optional override for the on-chain program id. Defaults to `zebec_stream_v2.aleo` on mainnet, `test_zebec_stream_v4.aleo` on testnet. |
+| `PROGRAM_SOURCE_PATH` | `run:deploy`, `run:upgrade` | Optional path to a pre-built `.aleo` source, used instead of deriving it from `build/`. |
 | `ADMIN_PRIVATE_KEY` | `run:admin`, `run:stream` | Config admin: initializes/updates the `StreamConfig`, whitelists tokens, signs every `StreamTokenFee`. |
 | `SENDER_PRIVATE_KEY` | `run:stream` | The stream sender (employer). Needs unspent token records/public balance covering the deposit + fee, plus credits for the auto-withdraw fee when enabled. |
 | `RECEIVER_PRIVATE_KEY` | `run:stream` | The stream receiver (employee). Must differ from the sender — the program asserts `receiver != caller`. |
@@ -178,6 +180,13 @@ Compiles `src/main.leo` per `program.json` into `build/<program identifier>/` (A
 yarn run:deploy    # scripts/deploy.ts — deploys build/<program identifier>/<program id>
 yarn run:upgrade   # scripts/upgrade.ts — upgrades an already-deployed program (constructor has @admin(...))
 ```
+
+The deployed program id is chosen from `NETWORK`:
+
+- `NETWORK=mainnet` → `zebec_stream_v2.aleo` (read from `program.json`)
+- `NETWORK=testnet` → `test_zebec_stream_v4.aleo`
+
+`program.json` only carries the mainnet name, so for testnet the scripts derive the deployable source by rewriting the single `program <id>.aleo;` line of the compiled `build/zebec_stream_v2/zebec_stream_v2.aleo` artifact — no separate testnet build is required. Run `yarn build` once first so that artifact exists. Override either with `PROGRAM_ID=<id>` (and point `PROGRAM_SOURCE_PATH` at a matching `.aleo` file if you have a real testnet build).
 
 Both read `PRIVATE_KEY` and build a local `ProgramManager` deployment/upgrade transaction directly (no wallet abstraction — these are one-off operator actions, not part of the `StreamClient` surface). Note the constructor is guarded by `@admin(address="aleo12czxn5...")` — only that address can perform upgrades.
 

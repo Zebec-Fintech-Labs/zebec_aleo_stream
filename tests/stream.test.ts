@@ -383,6 +383,96 @@ describe("testnet integration: stream lifecycle", function () {
     });
   });
 
+  describe("cancel before start", function () {
+    this.timeout(TEST_TIMEOUT_MS);
+    /** Far enough ahead that cancel definitely lands before the start time. */
+    const futureStart = () => nowSeconds() + 3600n;
+
+    it("cancels a private stream before its start and refunds the full deposit", async () => {
+      const streamId = randomField();
+      const params = createParams({
+        streamId,
+        amount: "2",
+        startTime: futureStart(),
+        startNow: false,
+      });
+      const { tokenFee, signature } = signedFee(microAmount(params.amount));
+      const createTx = await senderClient.createStreamPrivate(
+        params,
+        TOKEN_PROGRAM,
+        TOKEN_DECIMALS,
+        configInput(),
+        tokenFee,
+        signature,
+        { priorityFee: PRIORITY_FEE },
+      );
+      await confirmWrite(createTx);
+
+      const senderBefore = await senderClient.getPrivateTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      const receiverBefore = await receiverClient.getPrivateTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+
+      const cancelTx = await senderClient.cancelStreamPrivate({ streamId }, { priorityFee: PRIORITY_FEE });
+      await confirmWrite(cancelTx);
+
+      const anchor = await senderClient.getStreamAnchor(streamId);
+      assert.equal(anchor.canceled, true);
+      // Nothing vested before start, so nothing is claimable/withdrawn.
+      assert.equal(anchor.withdrawnAmount, 0n);
+
+      // Sender is refunded 100% of the 2-token deposit as a private record.
+      const senderAfter = await senderClient.getPrivateTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      assert.equal(
+        BigInt(toMicroUnits(senderAfter, TOKEN_DECIMALS)) - BigInt(toMicroUnits(senderBefore, TOKEN_DECIMALS)),
+        microAmount("2"),
+        "sender should be refunded the full deposit",
+      );
+      // Receiver gets nothing.
+      const receiverAfter = await receiverClient.getPrivateTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      assert.equal(receiverAfter, receiverBefore, "receiver should receive 0");
+    });
+
+    it("cancels a public stream before its start and refunds the full deposit", async () => {
+      const streamId = randomField();
+      const params = createParams({
+        streamId,
+        amount: "2",
+        startTime: futureStart(),
+        startNow: false,
+      });
+      const { tokenFee, signature } = signedFee(microAmount(params.amount));
+      const createTx = await senderClient.createStreamPublic(
+        params,
+        TOKEN_PROGRAM,
+        TOKEN_DECIMALS,
+        configInput(),
+        tokenFee,
+        signature,
+        { priorityFee: PRIORITY_FEE },
+      );
+      await confirmWrite(createTx);
+
+      const senderBefore = await senderClient.getPublicTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      const receiverBefore = await receiverClient.getPublicTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+
+      const cancelTx = await senderClient.cancelStreamPublic({ streamId }, { priorityFee: PRIORITY_FEE });
+      await confirmWrite(cancelTx);
+
+      const anchor = await senderClient.getStreamAnchor(streamId);
+      assert.equal(anchor.canceled, true);
+      assert.equal(anchor.withdrawnAmount, 0n);
+
+      // Sender is refunded 100% of the 2-token deposit to their public balance.
+      const senderAfter = await senderClient.getPublicTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      assert.equal(
+        BigInt(toMicroUnits(senderAfter, TOKEN_DECIMALS)) - BigInt(toMicroUnits(senderBefore, TOKEN_DECIMALS)),
+        microAmount("2"),
+        "sender should be refunded the full deposit",
+      );
+      const receiverAfter = await receiverClient.getPublicTokenBalance(TOKEN_PROGRAM, TOKEN_DECIMALS);
+      assert.equal(receiverAfter, receiverBefore, "receiver should receive 0");
+    });
+  });
+
   describe("private auto-withdraw", function () {
     this.timeout(TEST_TIMEOUT_MS);
     let streamId: string;

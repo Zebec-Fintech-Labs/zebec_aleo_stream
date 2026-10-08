@@ -34,14 +34,55 @@ console.log("Host:", HOST);
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 // console.log("Current directory:", here);
-const PROGRAM_ID = JSON.parse(
+// Program id per network: `program.json` holds the mainnet name; the testnet
+// deployment uses a different on-chain id, overridable via env.
+const MAINNET_PROGRAM_ID = JSON.parse(
     fs.readFileSync(path.resolve(here, "../program.json"), "utf8"),
 )["program"] as string;
-const PROGRAM_IDENTIFIER = PROGRAM_ID.split(".aleo")[0];
-const PROGRAM_SOURCE = fs.readFileSync(
-    path.resolve(here, `../build/${PROGRAM_IDENTIFIER}/${PROGRAM_ID}`),
-    "utf8",
-);
+const MAINNET_IDENTIFIER = MAINNET_PROGRAM_ID.split(".aleo")[0];
+const DEFAULT_TESTNET_PROGRAM_ID = `test_${MAINNET_IDENTIFIER}.aleo`;
+const PROGRAM_ID =
+    process.env.PROGRAM_ID ??
+    (NETWORK === "mainnet" ? MAINNET_PROGRAM_ID : DEFAULT_TESTNET_PROGRAM_ID);
+
+// Load the compiled source. For testnet (or any PROGRAM_ID that differs from
+// the mainnet id) the on-chain id is the `program <id>.aleo;` line inside the
+// source, so rewrite that one line from the compiled artifact.
+function loadProgramSource(): string {
+    const overridePath = process.env.PROGRAM_SOURCE_PATH;
+    if (overridePath) {
+        return fs.readFileSync(overridePath, "utf8");
+    }
+    if (PROGRAM_ID === MAINNET_PROGRAM_ID) {
+        return fs.readFileSync(
+            path.resolve(here, `../build/${MAINNET_IDENTIFIER}/${MAINNET_PROGRAM_ID}`),
+            "utf8",
+        );
+    }
+    const altIdentifier = PROGRAM_ID.split(".aleo")[0];
+    const altPath = path.resolve(here, `../build/${altIdentifier}/${PROGRAM_ID}`);
+    if (fs.existsSync(altPath)) {
+        return fs.readFileSync(altPath, "utf8");
+    }
+    // Derive the testnet source from the compiled mainnet artifact.
+    const base = fs.readFileSync(
+        path.resolve(here, `../build/${MAINNET_IDENTIFIER}/${MAINNET_PROGRAM_ID}`),
+        "utf8",
+    );
+    const renamed = base.replace(
+        `program ${MAINNET_PROGRAM_ID};`,
+        `program ${PROGRAM_ID};`,
+    );
+    if (renamed === base) {
+        throw new Error(
+            `Could not rewrite program id in compiled source. Expected to find "program ${MAINNET_PROGRAM_ID};".\n` +
+            `Provide the source explicitly via PROGRAM_SOURCE_PATH.`,
+        );
+    }
+    return renamed;
+}
+
+const PROGRAM_SOURCE = loadProgramSource();
 console.log("Program id:", PROGRAM_ID);
 // console.log("Program source loaded:\n", PROGRAM_SOURCE, "\n");
 
@@ -110,6 +151,13 @@ async function submitUpgrade(): Promise<string> {
                 throw new Error(
                     `Public fee rejected on ${NETWORK}: ${message}\n` +
                     `Fund ${deployer} with public ${NETWORK} credits and rerun.`,
+                );
+            }
+            if (message.includes("Failed to verify proof") || message.includes("Fee verification failed")) {
+                throw new Error(
+                    `The network rejected this transaction's fee proof, so resubmitting it will keep failing.\n` +
+                    `Rebuild the upgrade with the current SDK and submit that new transaction.\n` +
+                    message,
                 );
             }
             console.error("Submit failed, retrying in 5s:", message);

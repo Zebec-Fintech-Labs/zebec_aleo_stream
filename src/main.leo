@@ -234,7 +234,7 @@ const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 // (full_amount / duration) * 10 — negligible for all practical stream sizes.
 const CANCEL_NOW_TOLERANCE: i64 = 10i64; // 10 seconds
 
-program zebec_stream_v3.aleo {
+program zebec_streaming.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;
@@ -1476,7 +1476,7 @@ program zebec_stream_v3.aleo {
     // admin-upgrade mode); this constructor's own logic becomes immutable
     // once the program is first deployed.
     // @admin(address="aleo12czxn500cyj9a7lweuft6r4rrckthfck5k8440qh7atgrnt5kupqsfh038") // testnet
-    @admin(address="aleo1ta644kz3qqlwz5tg8pkee8qdwt4wlttuz4zjuhke2e3ph8x8ty9szywrvx") // mainnet
+    @admin(address="aleo1sewuznj5jajcep2njcc0nwneh6mdaf8dxhwzgw96xrc3tnqwv59shfjaj9") // mainnet
     constructor() {}
 }
 

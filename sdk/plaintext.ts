@@ -138,7 +138,8 @@ export function streamAnchorToPlaintext(a: RawStreamAnchor): string {
     `paused_interval: ${a.pausedInterval}u64, ` +
     `withdrawn_amount: ${a.withdrawnAmount}u128, ` +
     `is_public: ${boolLiteral(a.isPublic)}, ` +
-    `created_timestamp: ${a.createdTimestamp}i64 }`
+    `created_timestamp: ${a.createdTimestamp}i64, ` +
+    `config: ${fieldLiteral(a.config)} }`
   );
 }
 
@@ -278,6 +279,7 @@ export function parseStreamAnchor(plaintext: string): RawStreamAnchor {
     withdrawnAmount: parseIntLiteral(requireMember(m, "withdrawn_amount")),
     isPublic: parseBoolLiteral(requireMember(m, "is_public")),
     createdTimestamp: parseIntLiteral(requireMember(m, "created_timestamp")),
+    config: parseFieldLiteral(requireMember(m, "config")),
   };
 }
 

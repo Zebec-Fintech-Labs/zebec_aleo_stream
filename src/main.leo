@@ -234,7 +234,7 @@ const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 // (full_amount / duration) * 10 — negligible for all practical stream sizes.
 const CANCEL_NOW_TOLERANCE: i64 = 10i64; // 10 seconds
 
-program zebec_streaming.aleo {
+program zebec_streaming_v1.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of
     // the off-chain name).
     mapping stream_configs: field => StreamConfig;

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import path from "node:path";
 import * as fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { patchTestnetConsensusWasm } from "../sdk/patchTestnetWasm.js";
 
 dotenv.config();
 
@@ -9,6 +10,10 @@ const NETWORK = (process.env.NETWORK ?? "testnet").trim().toLowerCase();
 if (NETWORK !== "mainnet" && NETWORK !== "testnet") {
     console.error(`Unsupported NETWORK="${NETWORK}". Set NETWORK=mainnet or NETWORK=testnet.`);
     process.exit(1);
+}
+
+if (NETWORK === "testnet") {
+    patchTestnetConsensusWasm();
 }
 
 const { Account, AleoKeyProvider, initThreadPool, ProgramManager } =
@@ -32,48 +37,41 @@ const EXPLORER =
 console.log("Network:", NETWORK);
 console.log("Host:", HOST);
 const here = path.dirname(fileURLToPath(import.meta.url));
-// Program id per network: `program.json` holds the mainnet name; the testnet
-// deployment uses a different on-chain id, overridable via env.
-const MAINNET_PROGRAM_ID = JSON.parse(
+// `program.json` holds the name Leo builds. A `test_` prefix means that name
+// is the testnet id; mainnet is the same identifier without the prefix.
+const MANIFEST_PROGRAM_ID = JSON.parse(
     fs.readFileSync(path.resolve(here, "../program.json"), "utf8"),
 )["program"] as string;
-const MAINNET_IDENTIFIER = MAINNET_PROGRAM_ID.split(".aleo")[0];
-const DEFAULT_TESTNET_PROGRAM_ID = `test_${MAINNET_IDENTIFIER}.aleo`;
+const MANIFEST_IDENTIFIER = MANIFEST_PROGRAM_ID.split(".aleo")[0];
+const DEFAULT_MAINNET_PROGRAM_ID = MANIFEST_IDENTIFIER.startsWith("test_")
+    ? `${MANIFEST_IDENTIFIER.slice("test_".length)}.aleo`
+    : MANIFEST_PROGRAM_ID;
+const DEFAULT_TESTNET_PROGRAM_ID = MANIFEST_IDENTIFIER.startsWith("test_")
+    ? MANIFEST_PROGRAM_ID
+    : `test_${MANIFEST_IDENTIFIER}.aleo`;
 const PROGRAM_ID =
     process.env.PROGRAM_ID ??
-    (NETWORK === "mainnet" ? MAINNET_PROGRAM_ID : DEFAULT_TESTNET_PROGRAM_ID);
+    (NETWORK === "mainnet" ? DEFAULT_MAINNET_PROGRAM_ID : DEFAULT_TESTNET_PROGRAM_ID);
 
-// Load the compiled source. For testnet (or any PROGRAM_ID that differs from
-// the mainnet id) the on-chain id is the `program <id>.aleo;` line inside the
-// source, so rewrite that one line from the compiled artifact.
+// Load the compiled source. When the deploy id differs from the built name,
+// rewrite the single `program <id>.aleo;` line.
 function loadProgramSource(): string {
     const overridePath = process.env.PROGRAM_SOURCE_PATH;
     if (overridePath) {
         return fs.readFileSync(overridePath, "utf8");
     }
-    if (PROGRAM_ID === MAINNET_PROGRAM_ID) {
-        return fs.readFileSync(
-            path.resolve(here, `../build/${MAINNET_IDENTIFIER}/${MAINNET_PROGRAM_ID}`),
-            "utf8",
-        );
+    const builtPath = path.resolve(here, `../build/${MANIFEST_IDENTIFIER}/${MANIFEST_PROGRAM_ID}`);
+    const base = fs.readFileSync(builtPath, "utf8");
+    if (PROGRAM_ID === MANIFEST_PROGRAM_ID) {
+        return base;
     }
-    const altIdentifier = PROGRAM_ID.split(".aleo")[0];
-    const altPath = path.resolve(here, `../build/${altIdentifier}/${PROGRAM_ID}`);
-    if (fs.existsSync(altPath)) {
-        return fs.readFileSync(altPath, "utf8");
-    }
-    // Derive the testnet source from the compiled mainnet artifact.
-    const base = fs.readFileSync(
-        path.resolve(here, `../build/${MAINNET_IDENTIFIER}/${MAINNET_PROGRAM_ID}`),
-        "utf8",
-    );
     const renamed = base.replace(
-        `program ${MAINNET_PROGRAM_ID};`,
+        `program ${MANIFEST_PROGRAM_ID};`,
         `program ${PROGRAM_ID};`,
     );
     if (renamed === base) {
         throw new Error(
-            `Could not rewrite program id in compiled source. Expected to find "program ${MAINNET_PROGRAM_ID};".\n` +
+            `Could not rewrite program id in compiled source. Expected to find "program ${MANIFEST_PROGRAM_ID};".\n` +
             `Provide the source explicitly via PROGRAM_SOURCE_PATH.`,
         );
     }

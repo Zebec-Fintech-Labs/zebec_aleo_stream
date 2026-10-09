@@ -35,8 +35,9 @@ const WHITELIST_TOKENS = process.env.WHITELIST_TOKENS
         : ["test_usdcx_stablecoin", "test_usad_stablecoin"];
 
 const wallet = await createAleoWallet(ADMIN_PRIVATE_KEY, { host: HOST, network: NETWORK });
-const client = new StreamClient(wallet, { host: HOST });
+const client = new StreamClient(wallet, { host: HOST, network: NETWORK });
 const admin = wallet.address;
+console.log("Program id:", client.programId);
 console.log("Admin address:", admin);
 const CONFIG_NAME = configNameToField(`Stream_Config_001`);
 

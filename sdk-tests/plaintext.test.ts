@@ -169,6 +169,7 @@ function sampleAnchor(): RawStreamAnchor {
     withdrawnAmount: 500_000n,
     isPublic: false,
     createdTimestamp: 1_799_999_000n,
+    config: "7field",
   };
 }
 

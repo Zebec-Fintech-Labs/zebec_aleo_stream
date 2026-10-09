@@ -84,7 +84,7 @@ if (sender === receiver) {
 }
 
 const CONFIG_NAME = configNameToField("Stream_Config_001");
-const TOKEN_PROGRAM = "test_usdcx_stablecoin";
+const TOKEN_PROGRAM = "usdcx_stablecoin";
 const TOKEN_DECIMALS = 6;
 const TOKEN_PRICE_USD = 1_000_000n; // $1.00 per token, 6 decimals (used for off-chain fee quote only)
 const PRIORITY_FEE = 100_000; // 0.1 ALEO, in microcredits
@@ -92,7 +92,7 @@ const PRIORITY_FEE = 100_000; // 0.1 ALEO, in microcredits
 const STREAM_PARAMS: CreateStreamParams = {
     receiver,
     streamId: randomField(),
-    amount: "2", // 2 USDCx
+    amount: "0.05", // 2 USDCx
     startTime: 0n, // ignored: startNow is true
     duration: 10 * 60, // 10 minutes
     isCancelable: true,
@@ -155,7 +155,7 @@ async function createStreamPrivate(): Promise<string | bigint> {
     console.log("streamId:", params.streamId);
     const config = await getConfigInput();
     const { tokenFee, signature } = createSignedTokenFee(
-        2_000_000n, // params.amount in micro units
+        50000n, // params.amount in micro units
     );
     console.log(`Stream fee: ${tokenFee.streamFeeAmount} token units`);
 
@@ -180,7 +180,7 @@ async function createStreamPublic(): Promise<string | bigint> {
     const params = STREAM_PARAMS;
     console.log("streamId:", params.streamId);
     const config = await getConfigInput();
-    const { tokenFee, signature } = createSignedTokenFee(2_000_000n);
+    const { tokenFee, signature } = createSignedTokenFee(50000n);
     console.log(`Public stream fee: ${tokenFee.streamFeeAmount} token units`);
     // `create_stream_public` pulls both the deposit and the (token-denominated)
     // stream fee via `transfer_from_public`, so the stream program must be
@@ -300,6 +300,7 @@ async function main() {
     let end = Date.now();
     console.log(`Stream creation took ${(end - start) / 1000} seconds`);
     await setTimeout(5_000);
+
     console.log("Pausing stream...");
     start = Date.now();
     if (publicMode) {

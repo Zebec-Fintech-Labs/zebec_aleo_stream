@@ -24,6 +24,7 @@ import {
   CREDITS_PROGRAM_ID,
   DEFAULT_ALEO_ENDPOINT,
   STABLE_COINS_CONFIGS,
+  zebecStreamProgramId,
   ZEBEC_STREAM_PROGRAM_ID,
 } from "./config.js";
 import { getLoadedAleoSdk, resolvedNetwork } from "./network.js";
@@ -102,10 +103,10 @@ export class StreamService {
 
   constructor(wallet: AleoWallet, options: StreamServiceOptions = {}) {
     this.host = options.host ?? DEFAULT_ALEO_ENDPOINT;
-    const programId = options.programId ?? ZEBEC_STREAM_PROGRAM_ID;
+    const network = options.network ?? resolvedNetwork();
+    const programId = options.programId ?? zebecStreamProgramId(network);
     this.programId = programId;
     this.wallet = wallet;
-    const network = options.network ?? resolvedNetwork();
     const sdk = getLoadedAleoSdk();
     if (sdk) {
       this.networkClient = new sdk.AleoNetworkClient(this.host);
@@ -1316,5 +1317,6 @@ function humanAnchor(raw: RawStreamAnchor, decimals: number): StreamAnchor {
     withdrawnAmount: fromMicroUnits(raw.withdrawnAmount, decimals),
     isPublic: raw.isPublic,
     createdTimestamp: Number(raw.createdTimestamp),
+    config: raw.config,
   };
 }

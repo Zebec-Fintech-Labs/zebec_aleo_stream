@@ -303,6 +303,7 @@ function anchorValue(overrides: Partial<Record<string, string | number | bigint 
     withdrawn_amount: "0u128",
     is_public: "false",
     created_timestamp: "1000i64",
+    config: "7field",
     ...overrides,
   };
   return `{ ${Object.entries(anchor).map(([k, v]) => `${k}: ${v}`).join(", ")} }`;

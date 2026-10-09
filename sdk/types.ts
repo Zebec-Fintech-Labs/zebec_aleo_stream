@@ -67,6 +67,8 @@ export interface RawStreamAnchor {
   withdrawnAmount: bigint;
   isPublic: boolean;
   createdTimestamp: bigint;
+  /** Config name this stream was created under. */
+  config: string;
 }
 
 /** Leo `CreateStreamParams` struct (input of the create entries). */
@@ -203,6 +205,8 @@ export interface StreamAnchor {
   withdrawnAmount: string;
   isPublic: boolean;
   createdTimestamp: number;
+  /** Config name (`field`) this stream was created under. */
+  config: string;
 }
 
 /** Human-facing stream configuration (see {@link RawConfig}). */
@@ -438,8 +442,8 @@ export interface StreamServiceOptions {
   /** API host. Defaults to the testnet explorer API. */
   host?: string;
   /**
-   * Program id. Defaults to the deployed program —
-   * (read from `program.json`).
+   * Program id. Defaults to `zebec_streaming.aleo` on mainnet and
+   * `test_zebec_streaming.aleo` on testnet.
    */
   programId?: string;
   /** Network the service talks to. Defaults to `NETWORK` env / testnet. */

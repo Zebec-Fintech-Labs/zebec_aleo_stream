@@ -11,6 +11,6 @@
   "dev_dependencies": null,
   "leo": "4.4.1",
   "license": "MIT",
-  "program": "zebec_streaming.aleo",
+  "program": "zebec_streaming_v1.aleo",
   "version": "0.1.1"
 }

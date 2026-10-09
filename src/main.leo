@@ -877,13 +877,12 @@ program zebec_streaming.aleo {
             ? compute_auto_withdrawal_fee(params.duration, safe_frequency, config.base_fee, config.platform_fee)
             : 0u64;
 
-        // ALEO auto-withdrawal fee is paid from the caller's (employer's) public
-        // credits balance via `transfer_public`, which debits `self.caller` inside
-        // credits.aleo (= this program). In non-relayed flows the employer funds
-        // the program's credit balance; in relayed/sponsored flows the program's
-        // balance absorbs the fee rather than unexpectedly charging the tx signer.
+        // ALEO auto-withdrawal fee is paid from the employer's public credits
+        // balance via `transfer_public_as_signer`, which debits `self.signer`
+        // inside credits.aleo. Plain `transfer_public` would debit `self.caller`
+        // there, which is this program, not the employer.
         let f_auto_withdrawal_fee_transfer: Final =
-            credits.aleo::transfer_public(config.withdrawer, auto_withdrawal_fee);
+            credits.aleo::transfer_public_as_signer(config.withdrawer, auto_withdrawal_fee);
 
         let f_stream_fee_transfer: Final =
             IARC22@(token_program)::transfer_from_public(caller, config.fee_vault, token_fee.stream_fee_amount);

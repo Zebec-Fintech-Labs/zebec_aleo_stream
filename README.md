@@ -2,7 +2,7 @@
 
 A privacy-preserving token-streaming (vesting) protocol for the Aleo blockchain, plus the TypeScript SDK and CLI scripts used to build, deploy, and drive it.
 
-The on-chain program — `zebec_stream_v2.aleo`, written in [Leo](https://docs.leo-lang.org) — lets a **sender** stream any [ARC-22](https://vote.aleo.org/p/arc-0022) (`IARC22`) fungible token to a **receiver** on a linear vesting schedule, with pause/resume, cancellation, top-ups, and delegated auto-withdrawal. Every stream can run in **public** mode (state readable on-chain) or **private** mode (state encrypted in records, only existence/status public) — the same schedule math, the same entry points, chosen per stream at creation time.
+The on-chain program — `zebec_streaming_v1.aleo` on mainnet (`test_zebec_streaming_v1.aleo` on testnet), written in [Leo](https://docs.leo-lang.org) — lets a **sender** stream any [ARC-22](https://vote.aleo.org/p/arc-0022) (`IARC22`) fungible token to a **receiver** on a linear vesting schedule, with pause/resume, cancellation, top-ups, and delegated auto-withdrawal. Every stream can run in **public** mode (state readable on-chain) or **private** mode (state encrypted in records, only existence/status public) — the same schedule math, the same entry points, chosen per stream at creation time.
 
 ## Table of contents
 
@@ -149,7 +149,7 @@ All variables below are read by `scripts/*.ts` and `sdk/wallet.ts`'s `createAleo
 | --- | --- | --- |
 | `NETWORK` | all | Target network: `mainnet` or `testnet`. Selects the SDK bundle and the deployed program id for deploy/upgrade. |
 | `PRIVATE_KEY` | `run:deploy`, `run:upgrade` | Deployer key that pays for deployment/upgrade transactions. |
-| `PROGRAM_ID` | `run:deploy`, `run:upgrade` | Optional override for the on-chain program id. Defaults to `zebec_stream_v2.aleo` on mainnet, `test_zebec_stream_v4.aleo` on testnet. |
+| `PROGRAM_ID` | `run:deploy`, `run:upgrade` | Optional override for the on-chain program id. Defaults to `zebec_streaming_v1.aleo` on mainnet, `test_zebec_streaming_v1.aleo` on testnet. |
 | `PROGRAM_SOURCE_PATH` | `run:deploy`, `run:upgrade` | Optional path to a pre-built `.aleo` source, used instead of deriving it from `build/`. |
 | `ADMIN_PRIVATE_KEY` | `run:admin`, `run:stream` | Config admin: initializes/updates the `StreamConfig`, whitelists tokens, signs every `StreamTokenFee`. |
 | `SENDER_PRIVATE_KEY` | `run:stream` | The stream sender (employer). Needs unspent token records/public balance covering the deposit + fee, plus credits for the auto-withdraw fee when enabled. |
@@ -183,10 +183,10 @@ yarn run:upgrade   # scripts/upgrade.ts — upgrades an already-deployed program
 
 The deployed program id is chosen from `NETWORK`:
 
-- `NETWORK=mainnet` → `zebec_stream_v2.aleo` (read from `program.json`)
-- `NETWORK=testnet` → `test_zebec_stream_v4.aleo`
+- `NETWORK=mainnet` → `zebec_streaming_v1.aleo` (the name in `program.json` and `src/main.leo`)
+- `NETWORK=testnet` → `test_zebec_streaming_v1.aleo`
 
-`program.json` only carries the mainnet name, so for testnet the scripts derive the deployable source by rewriting the single `program <id>.aleo;` line of the compiled `build/zebec_stream_v2/zebec_stream_v2.aleo` artifact — no separate testnet build is required. Run `yarn build` once first so that artifact exists. Override either with `PROGRAM_ID=<id>` (and point `PROGRAM_SOURCE_PATH` at a matching `.aleo` file if you have a real testnet build).
+`program.json` carries the mainnet name. `yarn build` writes `build/zebec_streaming_v1/zebec_streaming_v1.aleo`, and a mainnet deploy uses that artifact as-is. A testnet deploy rewrites the single `program <id>.aleo;` line to `test_zebec_streaming_v1.aleo`. Run `yarn build` once first so the artifact exists. Override either with `PROGRAM_ID=<id>` (and point `PROGRAM_SOURCE_PATH` at a matching `.aleo` file if you have a separate build).
 
 Both read `PRIVATE_KEY` and build a local `ProgramManager` deployment/upgrade transaction directly (no wallet abstraction — these are one-off operator actions, not part of the `StreamClient` surface). Note the constructor is guarded by `@admin(address="aleo12czxn5...")` — only that address can perform upgrades.
 
@@ -271,8 +271,8 @@ See `scripts/stream.ts` and `tests/stream.test.ts` for complete, runnable exampl
 
 Program id: 
 
-- mainnet: **`zebec_stream_v2.aleo`**
-- testnet: **`test_zebec_stream_v4.aleo`**
+- mainnet: **`zebec_streaming_v1.aleo`**
+- testnet: **`test_zebec_streaming_v1.aleo`**
 
 ### Mappings
 

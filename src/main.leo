@@ -230,9 +230,9 @@ const NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
 // Tighter tolerance used exclusively for cancel operations. Cancel is terminal
 // and the sender benefits from a stale `now` (lower vested amount means a
-// larger refund). Limiting to 10 s caps the maximum skim to
+// larger refund). Limiting to 2min caps the maximum skim to
 // (full_amount / duration) * 10 — negligible for all practical stream sizes.
-const CANCEL_NOW_TOLERANCE: i64 = 10i64; // 10 seconds
+const CANCEL_NOW_TOLERANCE: i64 = 2i64 * 60i64; // 2 minutes
 
 program zebec_streaming_v1.aleo {
     // Stream configurations, keyed by unique config name (a BHP256 hash of

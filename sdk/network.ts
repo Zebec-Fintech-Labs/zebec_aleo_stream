@@ -5,6 +5,7 @@
  */
 
 import type { Network } from "./config.js";
+import { patchTestnetConsensusWasm } from "./patchTestnetWasm.js";
 
 export type { Network };
 
@@ -32,6 +33,9 @@ export async function loadAleoSdk(
   if (loaded && loadedNetwork === network) return loaded;
   if (loading && loadedNetwork === network) return loading;
 
+  if (network === "testnet") {
+    patchTestnetConsensusWasm();
+  }
   loadedNetwork = network;
   loading = (network === "mainnet"
     ? import("@provablehq/sdk/mainnet.js")

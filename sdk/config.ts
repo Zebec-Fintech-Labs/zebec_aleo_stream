@@ -19,10 +19,42 @@ export const CREDITS_PROGRAM_ID = "credits.aleo";
 
 const CONFIG_DIR = path.dirname(fileURLToPath(import.meta.url));
 
-/** Zebec stream program id — read from `../program.json` so renames stay in sync. */
-export const ZEBEC_STREAM_PROGRAM_ID = JSON.parse(
+/** Program id declared in `../program.json`. */
+const MANIFEST_PROGRAM_ID = JSON.parse(
   readFileSync(path.resolve(CONFIG_DIR, "../program.json"), "utf8"),
 )["program"] as string;
+
+const MANIFEST_IDENTIFIER = MANIFEST_PROGRAM_ID.replace(/\.aleo$/, "");
+
+/**
+ * `program.json` names the mainnet program. Testnet is that id with a
+ * `test_` prefix. A manifest that already starts with `test_` is the testnet
+ * id, and mainnet is the name with that prefix removed.
+ */
+export const ZEBEC_STREAM_MAINNET_PROGRAM_ID = MANIFEST_IDENTIFIER.startsWith("test_")
+  ? `${MANIFEST_IDENTIFIER.slice("test_".length)}.aleo`
+  : MANIFEST_PROGRAM_ID;
+
+export const ZEBEC_STREAM_TESTNET_PROGRAM_ID = MANIFEST_IDENTIFIER.startsWith("test_")
+  ? MANIFEST_PROGRAM_ID
+  : `test_${MANIFEST_IDENTIFIER}.aleo`;
+
+/** Program id for `network`. Mainnet is `zebec_streaming_v1.aleo`. */
+export function zebecStreamProgramId(network: Network): string {
+  return network === "mainnet"
+    ? ZEBEC_STREAM_MAINNET_PROGRAM_ID
+    : ZEBEC_STREAM_TESTNET_PROGRAM_ID;
+}
+
+/**
+ * Program id for the current `NETWORK` env (default testnet), so deploy and
+ * initialize target the same on-chain program.
+ */
+export const ZEBEC_STREAM_PROGRAM_ID = zebecStreamProgramId(
+  (process.env.NETWORK ?? "testnet").trim().toLowerCase() === "mainnet"
+    ? "mainnet"
+    : "testnet",
+);
 
 export interface StablecoinNetworkConfig {
   /**
